@@ -8,10 +8,10 @@ import sendEmail from '../utils/sendEmail.js';
 
 export const registerUser = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { username, email, password } = req.body;
+    const { username, role, email, password } = req.body;
 
     
-    if (!username || !email || !password) {
+    if (!username || !email || !password || !role) {
       res.status(400).json({ message: 'All fields are required' });
       return;
     }
@@ -27,6 +27,7 @@ export const registerUser = async (req: Request, res: Response): Promise<void> =
     const hashedPassword = await bcrypt.hash(password, 10);
     const newUser = new User({
       username,
+      role,
       email,
       password: hashedPassword, 
     });
@@ -70,6 +71,7 @@ export const loginUser = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
+
     const passwordMatch = await bcrypt.compare(password, user.password);
     if (!passwordMatch) {
       res.status(401).json({ message: "Invalid credentials" });
@@ -78,9 +80,7 @@ export const loginUser = async (req: Request, res: Response): Promise<void> => {
 
     const token = jwt.sign(
       { id: user._id }, 
-      process.env.JWT_SECRET!, 
-      { expiresIn: '1d' }
-    );
+      process.env.JWT_SECRET!,);
 
 
     res.status(200).json({ 
@@ -109,9 +109,7 @@ export const forgotPassword = async (req: Request, res: Response): Promise<void>
 
     const resetToken = jwt.sign(
       { id: user._id },
-      process.env.JWT_SECRET!,
-      { expiresIn: "1h" }
-    );
+      process.env.JWT_SECRET!,);
 
     const resetLink = `http://localhost:5173/reset-password?token=${resetToken}`;
 
@@ -154,12 +152,6 @@ export const resetPassword = async (req: Request, res: Response): Promise<void> 
 
   } catch (error: any) {
     console.error("Reset password error:", error);
-
-    if (error.name === "TokenExpiredError") {
-      res.status(401).json({ message: "Token expired. Please request a new reset link." });
-    } else {
-      res.status(400).json({ message: "Invalid token or request" });
-    }
   }
 };
 export const verifyEmail = async (req: Request, res: Response): Promise<void> => {
